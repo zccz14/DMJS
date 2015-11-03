@@ -41,7 +41,8 @@ function graph() {
 			for (var j = 0, lenj = list[i].length; j < lenj; j++)
 				data.Mat[i][list[i][j]] ++;
 		}
-		data.ready = true;
+		attr = {}; //清空特性
+		data.ready = true; //准备完毕
 		return {
 			status: true,
 			response: "邻接链表创建成功"
@@ -64,13 +65,21 @@ function graph() {
 					status: false,
 					response: "mat长宽不等，创建失败"
 				};
-			for (var i = 1; i < size; i++)
+			for (var i = 0; i < size; i++)
 				if (size != mat[i].length)
 					return {
 						status: false,
 						response: "mat每行不等长，创建失败"
 					};
 			data.Mat = mat;
+			//同步到邻接链表
+			data.List = [];
+			for (var i = 0; i < size; i++) {
+				data.List.push([]);
+				for (var j = 0; j < size; j++)
+					for (var k = 0, lenk = mat[i][j]; k < lenk; k++)
+						data.List[i].push(j);
+			}
 			attr = {}; //清空性质
 			data.ready = true; //数据准备完毕
 			return {
@@ -136,6 +145,8 @@ var list = [
 ];
 var log = [];
 log.push(G.set.ByMat(mat));
+log.push(G.print.Mat());
+log.push(G.data.List);
 log.push(G.set.ByList(list));
 log.push(G.print.Mat());
 log.push(G.is.Undirected());
