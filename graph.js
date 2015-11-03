@@ -6,7 +6,7 @@ function graph() {
 		ready: false, //数据准备标记
 		Mat: [], //邻接矩阵
 		List: [], //邻接链表
-		WMat:[],//权值矩阵
+		WMat:undefined,//权值矩阵
 		Deg: {
 			In: [], //入度
 			CountIn: undefined, //Deg.CountIn[i]代表入度为i的结点数
