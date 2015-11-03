@@ -3,7 +3,8 @@ function graph() {
 	this.data = {
 		ready: false,
 		Mat: [],
-		List: []
+		List: [],
+		ReachableMatrix: undefined
 	}; //数据类
 	this.set = {
 		ByList: undefined,
@@ -138,6 +139,22 @@ function graph() {
 			response: "是无向图"
 		};
 	};
+	this.is.InRange = function(vertex) { //Vertex下标是否在范围内
+		if (data.ready) {
+			if (vertex < 0 || vertex >= data.Mat.length)
+				return {
+					status: true,
+					response: false
+				};
+			else return {
+				status: true,
+				response: true
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
 	this.calc.Deg.Out = function(vertex) { //计算出度
 		if (data.ready) {
 			if (vertex < 0 || vertex >= data.Mat.length) return {
@@ -178,7 +195,7 @@ function graph() {
 			response: "数据未准备完毕"
 		};
 	};
-	this.calc.ReachableMatrix = function() {//求可达矩阵
+	this.calc.ReachableMatrix = function() { //求可达矩阵
 		if (data.ready) {
 			if (data.ReachableMatrix != undefined) return {
 				status: true,
@@ -205,15 +222,55 @@ function graph() {
 			reponse: "数据未准备好"
 		};
 	};
+	this.is.Reachable = function(start, end) { //从start到end是否可达？
+		if (data.ready) {
+			if (!is.InRange(start).response || !is.InRange(end).response) return {
+				status: false,
+				response: "结点越界"
+			};
+			if (data.ReachableMatrix != undefined) { //如果已经计算可达矩阵,O(1)
+				return {
+					status: true,
+					response: !!data.ReachableMatrix[start][end]
+				};
+			}
+			//邻接矩阵的BFS寻路,O(V^2)
+			var queue = [start];
+			var size = data.Mat.length;
+			var visited = [];
+			for (var i = 0; i < size; i++)
+				visited.push(false);
+			while (queue.length > 0) {
+				var x = queue.shift(); //取队首并出队
+				if (x == end) return {
+					status: true,
+					response: true
+				};
+				visited[x] = true; //访问标记
+				for (var i = 0; i < size; i++) { //i是下一个结点
+					if (!visited[i] && data.Mat[x][i] > 0) //如果没访问过且有边
+						queue.push(i); //加入队列
+				}
+			}
+			//如果之前没有return说明没有通路
+			return {
+				status: true,
+				response: false
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
 	//End
 	return this;
 };
 //Example Call
 var G = graph();
 var mat = [
-	[1, 2, 3],
-	[2, 3, 4],
-	[3, 4, 2]
+	[1, 0, 2],
+	[0, 1, 0],
+	[0, 2, 1]
 ];
 var list = [
 	[1, 1],
@@ -225,7 +282,7 @@ log.push(G.data.List);
 log.push(G.calc.Deg.Out(0)); //计算结点0的出度
 log.push(G.data.List);
 log.push(G.is.Undirected());
-log.push(G.calc.Deg.In(1)); //计算结点1的入度
-log.push(G.calc.ReachableMatrix()); //求可达矩阵
-log.push(G.print.Mat(G.data.ReachableMatrix)); //打印可达矩阵
+//log.push(G.calc.ReachableMatrix()); //求可达矩阵
+//log.push(G.print.Mat(G.data.ReachableMatrix)); //打印可达矩阵
+log.push(G.is.Reachable(0, 1));
 console.log(log);
