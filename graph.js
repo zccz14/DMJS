@@ -1,11 +1,19 @@
 //图对象
 function graph() {
 	this.data = {
-		ready: false,
-		Mat: [],
-		List: [],
-		ReachableMatrix: undefined
-	}; //数据类
+		//VertexSet: [], //点集
+		//EdgeSet: [], //边集
+		ready: false, //数据准备标记
+		Mat: [], //邻接矩阵
+		List: [], //邻接链表
+		Deg: {
+			In: [], //入度
+			CountIn: undefined, //Deg.CountIn[i]代表入度为i的结点数
+			CountOut: undefined //Deg.CountOut[i]代表出度为i的结点数
+		}, //结点的度
+		Edge: undefined, //边数
+		ReachableMatrix: undefined //可达矩阵
+	}; //数据缓冲类
 	this.set = {
 		ByList: undefined,
 		ByMat: undefined
@@ -14,17 +22,131 @@ function graph() {
 	this.print = {}; //打印类
 	this.is = {
 		MultiGraph: undefined, //是否多重图
-		SimpleGraph: undefined //是否简单图
+		SimpleGraph: undefined, //是否简单图
+		Isomorphism: undefined, //是否同构于..
+		IsomorphicFunction: undefined //是否为同构函数
 	}; //谓词类
 	this.calc = {
 		Deg: {
 			In: undefined, //入度
-			Out: undefined //出度
+			Out: undefined, //出度
+			CountIn: undefined, //入度统计
+			CountOut: undefined //出度统计
 		}, //度数
 		ReachableMatrix: undefined, //计算可达矩阵
-		ComplementGraph: undefined //补图
+		ComplementGraph: undefined, //补图
+		Edge: undefined //计算边
 	}; //计算类
-	//
+	//实现
+	this.calc.Deg.CountIn = function() { //入度统计
+		if (data.ready) {
+			//try to read cache
+			if (data.Deg.CountIn != undefined) return {
+				status: true,
+				response: data.Deg.CountIn
+			};
+			for (var i = 0, len = data.Mat.length; i < len; i++) {
+				var d = calc.Deg.In(i); //计算v[i]的入度
+				if (data.Deg.CountIn[d] == undefined) //如果没有定义过则是1
+					data.Deg.CountIn[d] = 1;
+				else data.Deg.CountIn[d] ++; //否则++
+			}
+			//未定义的也要定义为零
+			for (var i = 0, len = data.Deg.CountIn.length; i < len; i++)
+				if (data.Deg.CountIn[i] == undefined)
+					data.Deg.CountIn[i] = 0;
+			return {
+				status: true,
+				response: data.Deg.CountIn
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
+	this.calc.Deg.CountOut = function() { //出度统计
+		if (data.ready) {
+			//try to read cache
+			if (data.Deg.CountOut != undefined) return {
+				status: true,
+				response: data.Deg.CountOut
+			};
+			for (var i = 0, len = data.Mat.length; i < len; i++) {
+				var d = calc.Deg.Out(i); //计算v[i]的出度
+				if (data.Deg.CountOut[d] == undefined) //如果没有定义过则是1
+					data.Deg.CountOut[d] = 1;
+				else data.Deg.CountOut[d] ++; //否则++
+			}
+			//未定义的也要定义为零
+			for (var i = 0, len = data.Deg.CountOut.length; i < len; i++)
+				if (data.Deg.CountOut[i] == undefined)
+					data.Deg.CountOut[i] = 0;
+			return {
+				status: true,
+				response: data.Deg.CountOut
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
+	this.calc.Edge = function() { //计算总边数
+		if (data.ready) {
+			//尝试加载缓存
+			if (data.Edge != undefined)
+				return {
+					status: true,
+					response: data.Edge
+				};
+			var sum = 0;
+			for (var i = 0, len = data.List.length; i < len; i++)
+				sum += data.List[i].length; //由邻接链表的长度累加而成
+			data.Edge = sum; //设置缓存
+			return {
+				status: true,
+				response: sum
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
+	this.is.Isomorphism = function(Ga) { //是否为另一个图
+		if (data.ready && Ga.data.ready) {
+			if (data.Mat.length != Ga.data.Mat.length || calc.Edge() != Ga.calc.Edge()) return {
+				//不满足必要条件则必不同构
+				status: true,
+				response: false
+			};
+			//统计
+			calc.Deg.CountIn();
+			calc.Deg.CountOut();
+			Ga.calc.Deg.CountIn();
+			Ga.calc.Deg.CountOut();
+			if (data.Deg.CountIn.length != Ga.data.Deg.CountIn.length || data.Deg.CountOut.length != Ga.Deg.CountOut.length) return {
+				//长度不同
+				status: true,
+				response: false
+			};
+			//Assert:the same length of CountIn & CountOut
+			for (var i = 0, len = data.Deg.CountIn.length; i < len; i++)
+				if (data.Deg.CountIn[i] != Ga.data.Deg.CountIn[i])
+					return {
+						status: true,
+						response: false
+					};
+			for (var i = 0, len = data.Deg.CountOut.length; i < len; i++)
+				if (data.Deg.CountOut[i] != Ga.data.Deg.CountOut[i])
+					return {
+						status: true,
+						response: false
+					};
+			//Todo:
+		} else return {
+			status: false,
+			response: "数据没有准备完毕"
+		};
+	};
 	this.is.SimpleGraph = function() { //是否简单图
 		if (data.ready) {
 			//尝试加载缓存
@@ -189,8 +311,6 @@ function graph() {
 			response: "创建成功"
 		};
 	};
-	//打印输出类
-
 	this.print.Mat = function(Mat) { //打印矩阵
 		if (!data.ready) return {
 			status: false,
@@ -204,7 +324,6 @@ function graph() {
 			response: "打印矩阵成功"
 		};
 	};
-
 	this.is.Undirected = function() { //是无向图吗？
 		if (!data.ready)
 			return {
@@ -248,7 +367,7 @@ function graph() {
 	};
 	this.calc.Deg.Out = function(vertex) { //计算出度
 		if (data.ready) {
-			if (vertex < 0 || vertex >= data.Mat.length) return {
+			if (!is.InRange(vertex)) return {
 				status: false,
 				response: "结点下标越界"
 			};
@@ -264,9 +383,14 @@ function graph() {
 	};
 	this.calc.Deg.In = function(vertex) { //计算入度
 		if (data.ready) {
-			if (vertex < 0 || vertex >= data.Mat.length) return {
+			if (!is.InRange(vertex)) return {
 				status: false,
 				response: "结点下标越界"
+			};
+			//试图读缓存
+			if (data.Deg.In[vertex] != undefined) return {
+				status: true,
+				response: data.Deg.In[vertex]
 			};
 			if (attr.Undirected == true) return {
 				//如果有无向图的性质，优化到O(1)
@@ -277,6 +401,7 @@ function graph() {
 			//累计各点到vertex的边数和,O(V)
 			for (var i = 0, len = data.Mat.length; i < len; i++)
 				sum += data.Mat[i][vertex];
+			data.Deg.In[vertex] = sum; //设置缓存
 			return {
 				status: true,
 				response: sum
