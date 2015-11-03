@@ -38,6 +38,44 @@ function graph() {
 		Edge: undefined //计算边
 	}; //计算类
 	//实现
+	this.is.IsomorphicFunction = function(Ga,h){//h是G到Ga的同构映射吗
+		if(data.ready && Ga.data.ready){
+			//Todo:判定G,Ga的
+			if(data.Mat.length != Ga.data.Mat.length) return {
+				status:false,
+				response:"两图顶点数不同"
+			};
+			if(h.length == undefined || h.length !=data.Mat.length) return{
+				status:false,
+				response:"映射不合法"
+			};
+			//验证双射性，排序后hc[i]==i
+			var hc=h;
+			hc.sort();
+			for(var i=0,len=hc.length;i<len;i++)
+				if(hc[i]!=i) return{
+					status:false,
+					response:"映射非双射"
+				};
+			//暴力检验，O(V^2)
+			for(var i=0,len=data.Mat.length;i<len;i++)
+				for(var j=0;j<len;j++)
+					if(data.Mat[h[i]][h[j]]!=Ga.data.Mat[i][j])
+						return {
+							//此映射不能使邻接矩阵完全一致
+							status:true,
+							response:false
+						};
+			//那就是正确的同构函数
+			return{
+				status:true,
+				response:true
+			};
+		} else return {
+			status:false,
+			response:"数据未准备完毕"
+		};
+	};
 	this.calc.Deg.CountIn = function() { //入度统计
 		if (data.ready) {
 			//try to read cache
