@@ -10,7 +10,9 @@ function graph() {
 	this.print = {}; //打印类
 	this.is = {}; //谓词类
 	this.has = {}; //存在类
-
+	this.calc = {
+		Deg: {} //度数
+	}; //计算类
 	this.set.ByList = function(list) { //由邻接链表创建
 		if (list.length == undefined)
 			return {
@@ -31,6 +33,8 @@ function graph() {
 					};
 				}
 		}
+		//合法的数据，可以抛弃原有数据
+		data = {};
 		data.List = list;
 		//同步到邻接矩阵
 		data.Mat = [];
@@ -71,6 +75,8 @@ function graph() {
 						status: false,
 						response: "mat每行不等长，创建失败"
 					};
+				//合法的数据
+			data = {};
 			data.Mat = mat;
 			//同步到邻接链表
 			data.List = [];
@@ -105,28 +111,68 @@ function graph() {
 	}
 
 	this.is.Undirected = function() { //是无向图吗？
-			if (!data.ready)
-				return {
-					status: false,
-					response: "数据未准备好"
-				};
-			//如果之前已经算过，则直接返回
-			if (attr.Undirected != undefined)
-				return attr.Undirected;
-			//由邻接矩阵的暴力检索O(V^2)
-			for (var i = 0, leni = data.Mat.length; i < leni; i++)
-				for (var j = i + 1, lenj = data.Mat[i].length; j < lenj; j++)
-					if (!!data.Mat[i][j] != !!data.Mat[j][i]) { //取逻辑值，非0为true，否则为false
-						attr.Undirected = false; //记录性质
-						return {
-							status: false,
-							response: "反例：从顶点" + i + "到顶点" + j + "的边是单向的"
-						};
-					}
-			attr.Undirected = true; //记录性质
+		if (!data.ready)
+			return {
+				status: false,
+				response: "数据未准备好"
+			};
+		//如果之前已经算过，则直接返回
+		if (attr.Undirected != undefined)
+			return attr.Undirected;
+		//由邻接矩阵的暴力检索O(V^2)
+		for (var i = 0, leni = data.Mat.length; i < leni; i++)
+			for (var j = i + 1, lenj = data.Mat[i].length; j < lenj; j++)
+				if (data.Mat[i][j] != data.Mat[j][i]) { //边数不同即为有向
+					attr.Undirected = false; //记录性质
+					return {
+						status: false,
+						response: "反例：从顶点" + i + "到顶点" + j + "的边是单向的"
+					};
+				}
+		attr.Undirected = true; //记录性质
+		return {
+			status: true,
+			response: "是无向图"
+		};
+	}
+	this.calc.Deg.Out = function(vertex) { //计算出度
+		if (data.ready) {
+			if (vertex < 0 || vertex >= data.Mat.length) return {
+				status: false,
+				response: "结点下标越界"
+			};
 			return {
 				status: true,
-				response: "是无向图"
+				//直接由邻接链表得到结果，O(1)
+				response: data.List[vertex].length
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	}
+	this.calc.Deg.In = function(vertex) { //计算入度
+			if (data.ready) {
+				if (vertex < 0 || vertex >= data.Mat.length) return {
+					status: false,
+					response: "结点下标越界"
+				}
+				if (attr.Undirected == true) return { 
+					//如果有无向图的性质，优化到O(1)
+					status: true,
+					response: calc.Deg.Out(vertex).response
+				}
+				var sum = 0;
+				//累计各点到vertex的边数和,O(V)
+				for (var i = 0, len = data.Mat.length; i < len; i++)
+					sum += data.Mat[i][vertex];
+				return {
+					status: true,
+					response: sum
+				};
+			} else return {
+				status: false,
+				response: "数据未准备完毕"
 			};
 		}
 		//End
@@ -137,7 +183,7 @@ var G = graph();
 var mat = [
 	[1, 2, 3],
 	[2, 3, 4],
-	[2, 3, 2]
+	[3, 4, 2]
 ];
 var list = [
 	[1, 1],
@@ -147,7 +193,11 @@ var log = [];
 log.push(G.set.ByMat(mat));
 log.push(G.print.Mat());
 log.push(G.data.List);
-log.push(G.set.ByList(list));
+//log.push(G.set.ByList(list));
 log.push(G.print.Mat());
+log.push(G.calc.Deg.Out(0)); //计算结点0的出度
+log.push(G.data.Mat);
+log.push(G.data.List);
 log.push(G.is.Undirected());
+log.push(G.calc.Deg.In(1)); //计算结点1的入度
 console.log(log);
