@@ -12,12 +12,103 @@ function graph() {
 	}; //设置类
 	this.attr = {}; //性质类
 	this.print = {}; //打印类
-	this.is = {}; //谓词类
-	this.has = {}; //存在类
+	this.is = {
+		MultiGraph: undefined, //是否多重图
+		SimpleGraph: undefined //是否简单图
+	}; //谓词类
 	this.calc = {
-		Deg: {}, //度数
-		ReachableMatrix: undefined //计算可达矩阵
+		Deg: {
+			In: undefined, //入度
+			Out: undefined //出度
+		}, //度数
+		ReachableMatrix: undefined, //计算可达矩阵
+		ComplementGraph: undefined //补图
 	}; //计算类
+	//
+	this.is.SimpleGraph = function() { //是否简单图
+		if (data.ready) {
+			//尝试加载缓存
+			if (attr.SimpleGraph != undefined) return {
+				status: true,
+				response: attr.SimpleGraph
+			}
+			if (attr.MultiGraph == true || (attr.MultiGraph == undefined && is.MultiGraph().response == true)) return {
+				//是多重图的情况一定不是简单图
+				status: true,
+				response: false
+			};
+			//判断有无自环
+			for (var i = 0, size = data.Mat.length; i < size; i++)
+				if (data.Mat[i][i] != 0) {
+					attr.SimpleGraph = false;
+					return {
+						//有自环
+						status: true,
+						response: false
+					};
+				}
+				//无自环，是简单图
+			attr.SimpleGraph = true;
+			return {
+				status: true,
+				response: true
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+	};
+	this.is.MultiGraph = function() { //是否多重图
+		if (data.ready) {
+			//尝试加载缓存
+			if (attr.MultiGraph != undefined) return {
+				status: true,
+				response: attr.MultiGraph
+			};
+			for (var i = 0, size = data.Mat.length; i < size; i++)
+				for (var j = 0; j < size; j++)
+					if (data.Mat[i][j] > 1) {
+						attr.MultiGraph = true; //设置缓存
+						return {
+							status: true,
+							response: true
+						};
+					}
+			attr.MultiGraph = false; //设置缓存
+			return {
+				status: true,
+				response: false
+			};
+		} else return {
+			status: true,
+			response: "数据未准备完毕"
+		};
+	};
+	this.calc.ComplementGraph = function() { //求补图
+		if (data.ready) {
+			//如果不是简单图要退出
+			if (!is.SimpleGraph().response) return {
+				status: false,
+				response: "非简单图没有补图"
+			};
+			var mat = data.Mat;
+			var Gc = new graph();
+			for (var i = 0, size = mat.length; i < size; i++)
+				for (var j = 0; j < size; j++)
+					if (i != j) //除了对角线上的元素
+						mat[i][j] ^= 1; //toggle:自异或
+			console.log(mat);
+			Gc.set.ByMat(mat);
+			return {
+				status: true,
+				response: Gc
+			};
+		} else return {
+			status: false,
+			response: "数据未准备完毕"
+		};
+
+	};
 	this.set.ByList = function(list) { //由邻接链表创建
 		if (list.length == undefined)
 			return {
@@ -268,9 +359,9 @@ function graph() {
 //Example Call
 var G = graph();
 var mat = [
-	[1, 0, 2],
 	[0, 1, 0],
-	[0, 2, 1]
+	[1, 0, 0],
+	[0, 1, 0]
 ];
 var list = [
 	[1, 1],
@@ -278,11 +369,15 @@ var list = [
 ];
 var log = [];
 log.push(G.set.ByMat(mat));
-log.push(G.data.List);
-log.push(G.calc.Deg.Out(0)); //计算结点0的出度
-log.push(G.data.List);
-log.push(G.is.Undirected());
+//log.push(G.data.Mat);
+var Gc = G.calc.ComplementGraph().response; //求补图
+//log.push(Gc.print.Mat(Gc.data.Mat));
+log.push(Gc.print.Mat(Gc.data.Mat));
+//log.push(G.data.List);
+//log.push(G.calc.Deg.Out(0)); //计算结点0的出度
+//log.push(G.data.List);
+//log.push(G.is.Undirected());
 //log.push(G.calc.ReachableMatrix()); //求可达矩阵
 //log.push(G.print.Mat(G.data.ReachableMatrix)); //打印可达矩阵
-log.push(G.is.Reachable(0, 1));
+//log.push(G.is.Reachable(0, 1));
 console.log(log);
