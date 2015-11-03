@@ -6,6 +6,7 @@ function graph() {
 		ready: false, //数据准备标记
 		Mat: [], //邻接矩阵
 		List: [], //邻接链表
+		WMat:[],//权值矩阵
 		Deg: {
 			In: [], //入度
 			CountIn: undefined, //Deg.CountIn[i]代表入度为i的结点数
@@ -15,8 +16,12 @@ function graph() {
 		ReachableMatrix: undefined //可达矩阵
 	}; //数据缓冲类
 	this.set = {
-		ByList: undefined,
-		ByMat: undefined
+		ByList: undefined,//由邻接链表生成图
+		ByMat: undefined,//由邻接矩阵生成图
+		AddEdge:undefined,//加边
+		AddVertex:undefined,//加点
+		DeleteEdge:undefined,//删边
+		DeleteVertex:undefined//删点
 	}; //设置类
 	this.attr = {}; //性质类
 	this.print = {}; //打印类
@@ -149,7 +154,7 @@ function graph() {
 			response: "数据未准备完毕"
 		};
 	};
-	this.is.Isomorphism = function(Ga) { //是否为另一个图
+	this.is.Isomorphism = function(Ga) { //是否与另一个图重构
 		if (data.ready && Ga.data.ready) {
 			if (data.Mat.length != Ga.data.Mat.length || calc.Edge() != Ga.calc.Edge()) return {
 				//不满足必要条件则必不同构
